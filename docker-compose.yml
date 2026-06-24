@@ -1,0 +1,12 @@
+services:
+  taskflow:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ~/.claude:/home/node/.claude:ro
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    restart: unless-stopped
