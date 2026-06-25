@@ -57,15 +57,22 @@ function AppInner() {
   const [selStat, setSelStat] = useState('all');
   const [modal,   setModal]   = useState({ open: false, task: null, defaultProjectId: 'inbox' });
 
-  useEffect(() => { saveState(state); }, [state]);
+  const serverLoaded = useRef(false);
 
   useEffect(() => {
-    fetchServerState().then(s => { if (s?.projects?.length) setState(s); });
+    if (serverLoaded.current) saveState(state);
+  }, [state]);
+
+  useEffect(() => {
+    fetchServerState().then(s => {
+      serverLoaded.current = true;
+      if (s) setState(s);
+    });
   }, []);
 
   const syncFromServer = useCallback(async () => {
     const s = await fetchServerState();
-    if (s?.projects?.length) setState(s);
+    if (s) setState(s);
   }, []);
 
   const addProject = useCallback((name) => {

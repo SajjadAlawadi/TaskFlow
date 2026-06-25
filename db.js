@@ -45,10 +45,13 @@ export function getState() {
   return { projects, tasks };
 }
 
-/** Upsert full state (projects + tasks arrays from the frontend). */
+/** Replace full state (projects + tasks arrays from the frontend). */
 export function syncState({ projects = [], tasks = [] }) {
-  const ip = _db.prepare('INSERT OR REPLACE INTO projects VALUES (?, ?, ?)');
-  const it = _db.prepare('INSERT OR REPLACE INTO tasks    VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  _db.run('DELETE FROM tasks');
+  _db.run('DELETE FROM projects');
+
+  const ip = _db.prepare('INSERT INTO projects VALUES (?, ?, ?)');
+  const it = _db.prepare('INSERT INTO tasks    VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
   for (const p of projects) {
     ip.run([p.id, p.name, p.color]);
@@ -89,49 +92,8 @@ export async function initDb() {
         updated_at  INTEGER NOT NULL
       );
     `);
-    seed();
     save();
-    console.log('✦ DB created and seeded at data/taskflow.db');
+    console.log('✦ DB created at data/taskflow.db');
   }
 }
 
-function seed() {
-  const t = Date.now();
-  const ip = _db.prepare('INSERT INTO projects VALUES (?, ?, ?)');
-  const it = _db.prepare('INSERT INTO tasks    VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-
-  [
-    ['inbox',    'Inbox',       '#7D8590'],
-    ['p_work',   'Work',        '#6366F1'],
-    ['p_devops', 'DevOps',      '#10B981'],
-    ['p_side',   'Side Hustle', '#F97316'],
-    ['p_life',   'Personal',    '#EC4899'],
-  ].forEach(r => ip.run(r));
-
-  [
-    ['t01','p_work',  'Fix case-sensitive map key lookup bug',       'yuuvis-importer config binding — keys need lowercasing before lookup','high',  'in-progress'],
-    ['t02','p_work',  'Review Spring Boot config binding PR #47',    '@ConfigurationProperties binding with nested map-of-lists',          'high',  'in-progress'],
-    ['t03','p_work',  'Write unit tests for invoice parser',         '',                                                                   'medium','todo'],
-    ['t04','p_work',  'Update API docs for v2.3',                    'Swagger + README — new endpoint descriptions',                       'medium','todo'],
-    ['t05','p_work',  'Q3 sprint retrospective report',              '',                                                                   'low',   'done'],
-    ['t06','p_work',  'Refactor supplier invoice producer service',  'Split into smaller services, improve error handling',                'low',   'todo'],
-    ['t07','p_devops','Fix Docker Compose CIFS/SMB volume mount',    'Permission failure on yuuvis-supplier-invoice-producer-qa',          'high',  'in-progress'],
-    ['t08','p_devops','Set up GitLab CI/CD for yuuvis-importer',     'develop → release → main, Maven versions plugin',                   'high',  'done'],
-    ['t09','p_devops','Configure Jenkins release job',               'Maven release automation — confirm-before-push gate required',       'medium','todo'],
-    ['t10','p_devops','Evaluate Aider vs OpenHands for team use',    'Compare agentic coding tools for Java/Spring workflow',              'medium','todo'],
-    ['t11','p_devops','Add health-check to supplier service',        '',                                                                   'low',   'todo'],
-    ['t12','p_side',  'Record Continue.dev + Groq tutorial',         'German-language YouTube — Spring Boot AI tooling for devs',          'high',  'in-progress'],
-    ['t13','p_side',  'Write script: AI coding tools comparison',    'Cline vs Aider vs OpenHands — targeted at Java devs',                'high',  'todo'],
-    ['t14','p_side',  'Set up YouTube channel branding',             'Logo, banner, channel description in German',                        'medium','done'],
-    ['t15','p_side',  'Create landing page for digital products',    'Products €9–€29 — Spring Boot templates, prompt packs',              'medium','todo'],
-    ['t16','p_side',  'Draft 90-day content calendar',               '3-phase plan: build → grow → monetise',                             'low',   'done'],
-    ['t17','p_life',  'Plan camping trip to the Alps',               'Bernese Oberland or Dolomites — late summer',                        'medium','todo'],
-    ['t18','p_life',  'Buy camping gear (grill + tent)',             '',                                                                   'medium','in-progress'],
-    ['t19','p_life',  'Research Mediterranean route from Basel',     'Nice via A5/A8 ~5h from Rheinfelden',                                'low',   'todo'],
-    ['t20','p_life',  'Schedule car service appointment',            '',                                                                   'low',   'done'],
-    ['t21','inbox',   'Explore AWS Solutions Architect cert',        '',                                                                   'low',   'todo'],
-  ].forEach(([id, pid, title, desc, pri, sta]) => it.run([id, pid, title, desc, pri, sta, t, t]));
-
-  ip.free();
-  it.free();
-}
